@@ -1,0 +1,28 @@
+{
+  "editor.fontFamily": "'JetBrains Mono', 'Courier New', monospace",
+  "editor.fontLigatures": true,
+  "editor.fontSize": 15,
+  "editor.suggestSelection": "first",
+  "editor.quickSuggestions": {
+    "other": true,
+    "comments": false,
+    "strings": true
+  },
+
+  "editor.tabCompletion": "on",
+  "editor.wordBasedSuggestions": "allDocuments",
+
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  "terminal.integrated.fontFamily": "'JetBrains Mono', monospace",
+
+  "workbench.iconTheme": "material-icon-theme",
+  "workbench.colorTheme": "Darcula Mono",
+  "editor.minimap.enabled": false,
+  "files.autoSave": "afterDelay",
+  "editor.renderWhitespace": "all",
+  "editor.cursorSmoothCaretAnimation": "off",
+  "eslint.format.enable": true,
+  "prettier.enable": true
+}
