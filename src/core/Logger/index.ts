@@ -2,13 +2,13 @@
 import chalk from 'chalk';
 
 export class Logger {
-  static $shared?: Logger = undefined;
+  static #shared?: Logger = undefined;
 
   static get shared(): Logger {
-    if (this.$shared === undefined) {
-      this.$shared = new Logger();
+    if (this.#shared === undefined) {
+      this.#shared = new Logger();
     }
-    return this.$shared;
+    return this.#shared;
   }
 
   public dbg(title: string, params?: any, note?: string) {
