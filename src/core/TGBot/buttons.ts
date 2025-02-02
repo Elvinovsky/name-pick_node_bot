@@ -15,12 +15,11 @@ export const Buttons: IButtons = {
   filters: {
     genderBoy: { text: '👦 Мальчик' },
     genderGirl: { text: '👧 Девочка' },
-    originRussian: { text: '🇷🇺 Русские' },
-    originFrench: { text: '🇫🇷 Французские' },
-    originIndian: { text: '🇮🇳 Индийские' },
-    top10: { text: 'Топ-10' },
+    eroupean: { text: '🌍 Европейские' },
+    eastern: { text: '🌏 Восточные' },
+    arabian: { text: '🕌 Арабские ' },
+    caucasian: { text: '🏔 Кавказские' },
     rare: { text: 'Редкие' },
-    unique: { text: 'Уникальные' },
   },
   randomName: {
     accept: { text: '✅ Принять' },
@@ -39,6 +38,7 @@ export const Buttons: IButtons = {
     language: { text: '🌍 Язык интерфейса' },
   },
   back: { text: '⬅️ Назад' },
+  apply: { text: '✅ Применить' },
 } as const;
 
 export const ButtonsLayout: ButtonsLayoutType = {
@@ -49,10 +49,10 @@ export const ButtonsLayout: ButtonsLayoutType = {
   ],
 
   filters: [
-    [Buttons.filters.genderBoy, Buttons.filters.genderGirl],
-    [Buttons.filters.originRussian, Buttons.filters.originFrench, Buttons.filters.originIndian],
-    [Buttons.filters.top10, Buttons.filters.rare, Buttons.filters.unique],
-    [Buttons.back],
+    [Buttons.filters.genderBoy, Buttons.filters.genderGirl, Buttons.filters.rare],
+    [Buttons.filters.eroupean, Buttons.filters.eastern],
+    [Buttons.filters.arabian, Buttons.filters.caucasian],
+    [Buttons.apply, Buttons.back],
   ],
 
   randomName: [[Buttons.randomName.accept, Buttons.randomName.requestAnother], [Buttons.randomName.addToFavorites], [Buttons.back]],
@@ -64,16 +64,11 @@ export const ButtonsLayout: ButtonsLayoutType = {
   settings: [[Buttons.settings.exportFavorites, Buttons.settings.notifications], [Buttons.settings.theme, Buttons.settings.language], [Buttons.back]],
 
   back: [[Buttons.back]],
+
+  apply: [[Buttons.apply]],
 } as const;
 
-const Commands = [
-  {
-    command: 'start',
-    description: 'Запуск бота',
-  },
-];
-
-//INTERFACES
+//INTERFACES / TYPES
 //...........................................................
 
 interface IButtons {
@@ -83,6 +78,7 @@ interface IButtons {
   nameLists: NameListsButtons;
   settings: SettingsButtons;
   back: Button;
+  apply: Button;
 }
 
 type ButtonsLayoutType = {
@@ -109,12 +105,11 @@ interface MainMenuButtons {
 interface FiltersButtons {
   genderBoy: Button;
   genderGirl: Button;
-  originRussian: Button;
-  originFrench: Button;
-  originIndian: Button;
-  top10: Button;
+  eroupean: Button;
+  eastern: Button;
+  arabian: Button;
+  caucasian: Button;
   rare: Button;
-  unique: Button;
 }
 
 interface RandomNameButtons {
