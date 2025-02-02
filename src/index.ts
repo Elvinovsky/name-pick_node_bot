@@ -1,7 +1,7 @@
 import { defaultConfig, TGBot } from './core';
 
 async function main() {
-  const bot = await TGBot.shared(defaultConfig);
+  const bot = new TGBot(defaultConfig);
   await bot.setupMenu();
 }
 
