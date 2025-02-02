@@ -32,6 +32,7 @@
     "typescript": "^5.7.3"
   },
   "dependencies": {
+    "node-cache": "^5.1.2",
     "node-telegram-bot-api": "^0.66.0",
     "pg": "^8.13.1"
   }
