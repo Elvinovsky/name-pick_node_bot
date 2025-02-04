@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Name {
+  id         Int     @id @default(autoincrement())
+  name       String  @unique
+  gender     Gender
+  origin     Origin
+  category   String
+  note       String
+  popularity Int     @default(0) // Чем выше, тем популярнее
+  isRare     Boolean @default(false)
+  createdAt  DateTime @default(now())
+}
+
+enum Gender {
+  genderBoy
+  genderGirl
+}
+
+enum Origin {
+  eroupean
+  eastern
+  caucasian
+  arabian
+}
+
+model User {
+  id        Int     @id @default(autoincrement())
+  chatId    BigInt  @unique
+  favorites FavoriteName[]
+}
+
+model FavoriteName {
+  id     Int  @id @default(autoincrement())
+  name   String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+  addedAt DateTime @default(now())
+}
+
+
