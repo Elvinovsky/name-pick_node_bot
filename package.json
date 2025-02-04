@@ -7,6 +7,8 @@
     "start:dev": "NODE_ENV=dev nodemon --inspect _dist/index.js",
     "build": "rm -rf ./_dist && clear && tsc -v && tsc -p tsconfig.json",
     "watch": "tsc -w",
+    "migrate:dev": "npx prisma db push",
+    "prisma:seed": "node prisma/seed.js",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "test": "jest",
@@ -26,12 +28,14 @@
     "jest": "^29.7.0",
     "nodemon": "^3.1.9",
     "prettier": "^3.4.2",
+    "prisma": "^6.3.0",
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
   },
   "dependencies": {
+    "@prisma/client": "^6.3.0",
     "node-cache": "^5.1.2",
     "node-telegram-bot-api": "^0.66.0",
     "pg": "^8.13.1"
