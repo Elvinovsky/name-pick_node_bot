@@ -12,12 +12,17 @@ export const Buttons: IButtons = {
     favorites: { text: '❤️ Избранные имена' },
     settings: { text: '⚙️ Настройки' },
   },
+
+  favoriteName: {
+    delete: { text: '❌  Удалить' },
+    add: { text: '✅ Добавить' },
+  },
   filters: {
     genderBoy: { text: '👦 Мальчик' },
     genderGirl: { text: '👧 Девочка' },
     eroupean: { text: '🌍 Европейские' },
     eastern: { text: '🌏 Восточные' },
-    arabian: { text: '🕌 Арабские ' },
+    arabian: { text: '🕌 Арабские' },
     caucasian: { text: '🏔 Кавказские' },
     rare: { text: 'Редкие' },
   },
@@ -27,7 +32,7 @@ export const Buttons: IButtons = {
     addToFavorites: { text: '❤️ Добавить в избранное' },
   },
   nameLists: {
-    topPopular: { text: '💎 Топ популярных имен' },
+    populare: { text: '💎 Топ популярных имен' },
     rareUnusual: { text: '🕊 Редкие и необычные' },
     classicOld: { text: '📜 Классические и старинные' },
   },
@@ -54,13 +59,15 @@ export const ButtonsLayout: ButtonsLayoutType = {
     [Buttons.filters.arabian, Buttons.filters.caucasian],
     [Buttons.apply, Buttons.back],
   ],
+  nameLists: [
+    [Buttons.nameLists.populare, Buttons.nameLists.rareUnusual],
+    [Buttons.nameLists.classicOld, Buttons.back],
+  ],
+
+  favoriteName: [[Buttons.favoriteName.add, Buttons.favoriteName.delete], [Buttons.back]],
 
   randomName: [[Buttons.randomName.accept, Buttons.randomName.requestAnother], [Buttons.randomName.addToFavorites], [Buttons.back]],
 
-  nameLists: [
-    [Buttons.nameLists.topPopular, Buttons.nameLists.rareUnusual],
-    [Buttons.nameLists.classicOld, Buttons.back],
-  ],
   settings: [[Buttons.settings.exportFavorites, Buttons.settings.notifications], [Buttons.settings.theme, Buttons.settings.language], [Buttons.back]],
 
   back: [[Buttons.back]],
@@ -72,61 +79,69 @@ export const ButtonsLayout: ButtonsLayoutType = {
 //...........................................................
 
 interface IButtons {
-  mainMenu: MainMenuButtons;
-  filters: FiltersButtons;
-  randomName: RandomNameButtons;
-  nameLists: NameListsButtons;
-  settings: SettingsButtons;
-  back: Button;
-  apply: Button;
+  mainMenu: IMainMenuButtons;
+  filters: IFiltersButtons;
+  randomName: IRandomNameButtons;
+  favoriteName: IFavoriteNameButtons;
+  nameLists: INameListsButtons;
+  settings: ISettingsButtons;
+  back: IButton;
+  apply: IButton;
 }
 
 type ButtonsLayoutType = {
   [key in keyof IButtons]: KeyboardButton[][];
 };
 
-export interface ButtonAction extends Button {
-  action: () => Promise<number | void>;
-}
-
-interface Button {
+interface IButton {
   text: string;
 }
 
-interface MainMenuButtons {
-  searchByFilters: Button;
-  randomName: Button;
-  nameLists: Button;
-  nameMeaning: Button;
-  favorites: Button;
-  settings: Button;
+interface IMainMenuButtons {
+  [key: string]: { text: string };
+  searchByFilters: IButton;
+  randomName: IButton;
+  nameLists: IButton;
+  nameMeaning: IButton;
+  favorites: IButton;
+  settings: IButton;
 }
 
-interface FiltersButtons {
-  genderBoy: Button;
-  genderGirl: Button;
-  eroupean: Button;
-  eastern: Button;
-  arabian: Button;
-  caucasian: Button;
-  rare: Button;
+interface IFiltersButtons {
+  [key: string]: { text: string };
+  genderBoy: IButton;
+  genderGirl: IButton;
+  eroupean: IButton;
+  eastern: IButton;
+  arabian: IButton;
+  caucasian: IButton;
+  rare: IButton;
 }
 
-interface RandomNameButtons {
-  accept: Button;
-  requestAnother: Button;
-  addToFavorites: Button;
+interface IRandomNameButtons {
+  [key: string]: { text: string };
+  accept: IButton;
+  requestAnother: IButton;
+  addToFavorites: IButton;
 }
 
-interface NameListsButtons {
-  topPopular: Button;
-  rareUnusual: Button;
-  classicOld: Button;
+interface IFavoriteNameButtons {
+  [key: string]: { text: string };
+  add: IButton;
+  delete: IButton;
 }
 
-interface SettingsButtons {
-  exportFavorites: Button;
-  notifications: Button;
-  theme: Button;
-  language: Button;
+interface INameListsButtons {
+  [key: string]: { text: string };
+  populare: IButton;
+  rareUnusual: IButton;
+  classicOld: IButton;
+}
+
+interface ISettingsButtons {
+  [key: string]: { text: string };
+  exportFavorites: IButton;
+  notifications: IButton;
+  theme: IButton;
+  language: IButton;
 }
