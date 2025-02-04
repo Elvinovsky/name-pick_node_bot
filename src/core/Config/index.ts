@@ -26,12 +26,12 @@ export const defaultConfig: Config = {
 
   datasource: {
     db: {
-      host: process.env.DATASOURCE_DB_HOST || 'localhost',
-      port: Number.parseInt(process.env.DATASOURCE_DB_PORT || '5432'),
-      database: process.env.DATASOURCE_DB_NAME || 'db',
-      user: process.env.DATASOURCE_DB_USER || 'user',
-      password: process.env.DATASOURCE_DB_PASS || 'pass',
-      max: Number.parseInt(process.env.DATASOURCE_DB_MAX_CONN || '100'),
+      host: process.env.POSTGRES_HOST || 'localhost',
+      port: Number.parseInt(process.env.POSTGRES_PORT || '5432'),
+      database: process.env.POSTGRES_DB || 'db',
+      user: process.env.POSTGRES_USER || 'user',
+      password: process.env.POSTGRES_PASSWORD || 'pass',
+      max: Number.parseInt(process.env.POSTGRES_DB_MAX_CONN || '100'),
     },
   },
 
