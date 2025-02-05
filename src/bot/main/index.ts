@@ -6,22 +6,28 @@ import { Buttons, ButtonsLayout } from './btnMenu';
 import { StepStatus } from '../constants';
 
 import { QueryRepository, CommandRepository } from '../../core/';
-import { INameMeaning, NameMeaner } from '../../core/';
+import { INameMeaning, NameMeaningScraper } from '../../core/';
 import { Config } from '../../core';
 import { Logger } from '../../core';
-interface IUserChatCashe {
+import { Prisma } from '@prisma/client';
+
+interface IUserChatCache {
   step: string;
-  selectedFilters: string[];
-  currentFavoriteName: {
-    id?: number;
+  selectedFilters?: string[];
+  currentFavoriteName?: {
     name: string;
   };
+  pagination?: {
+    skip: number;
+    count?: number;
+  };
+  query?: Prisma.NameWhereInput;
 }
 
 export class TGBot {
   public bot?: TelegramBot;
   private userCache: NodeCache;
-  private nameMeanerService: NameMeaner;
+  private nameMeanerService: NameMeaningScraper;
   private repository: QueryRepository;
   private command: CommandRepository;
 
@@ -36,7 +42,7 @@ export class TGBot {
       this.userCache = new NodeCache({ stdTTL: 1800 });
       this.repository = new QueryRepository();
       this.command = new CommandRepository();
-      this.nameMeanerService = new NameMeaner();
+      this.nameMeanerService = new NameMeaningScraper();
       Logger.shared.info('Telegram bot initialized successfully');
     } catch (error) {
       Logger.shared.error(error as Error, `Failed to initialize Telegram bot`);
@@ -58,7 +64,7 @@ export class TGBot {
     this.bot.on('message', async (msg) => {
       const chatId = msg.chat.id;
       const text = msg.text!;
-      const userCache: IUserChatCashe | undefined = this.userCache.get(chatId);
+      const userCache: IUserChatCache | undefined = this.userCache.get(chatId);
 
       if (text === Buttons.back.text) {
         return this.sendMenuDelCash(chatId);
@@ -88,10 +94,19 @@ export class TGBot {
     });
   }
 
+  setUserChatCache(chatId: number, cache: IUserChatCache): void {
+    this.userCache.set(chatId, cache);
+  }
+
+  getUserChatCache(chatId: number): IUserChatCache | undefined {
+    const cachedData = this.userCache.get<IUserChatCache>(chatId);
+    return cachedData; // Возвращаем значение с типом IUserChatCache
+  }
+
   //...................................................................
 
   private async btnFavoriteName(chatId: number, text: string): Promise<void> {
-    const userCache: IUserChatCashe | undefined = this.userCache.get(chatId);
+    const userCache: IUserChatCache | undefined = this.getUserChatCache(chatId);
 
     if (!userCache || userCache.step !== StepStatus.FAVORITE_NAME_WAITING) {
       await this.sendMessage(chatId, 'Ошибка! Попробуйте начать заново.');
@@ -106,7 +121,7 @@ export class TGBot {
 
     if (!key) {
       userCache.currentFavoriteName = { name: text };
-      this.userCache.set(chatId, userCache);
+      this.setUserChatCache(chatId, userCache);
       return this.sendFavoriteName(chatId, '<b>Теперь выберите действие.</b>');
     }
 
@@ -123,30 +138,35 @@ export class TGBot {
   }
 
   private async btnListByCategory(chatId: number, tCategory: string) {
-    const userCache: IUserChatCashe | undefined = this.userCache.get(chatId);
+    const userCache: IUserChatCache | undefined = this.getUserChatCache(chatId);
+    let query = userCache?.query;
 
     if (!userCache || userCache.step !== StepStatus.NAME_LISTS_WAITING) {
-      await this.sendMessage(chatId, 'Ошибка! Попробуйте начать заново.');
-      return this.sendMenuDelCash(chatId);
+      return this.sendMenuDelCash(chatId, 'Ошибка! Попробуйте начать заново.');
     }
 
-    if (!btnCategoriesTextArr.includes(tCategory)) {
+    if (!query && !btnCategoriesTextArr.includes(tCategory)) {
       return this.sendMessage(chatId, 'Выберите категорию из списка меню!');
     }
 
-    const category = btnKeysByVal(Buttons.nameLists, [tCategory]);
+    if (!query) {
+      const category = btnKeysByVal(Buttons.nameLists, [tCategory]) as string;
+      query = { category };
+      userCache.query = query;
+    }
 
-    const nameList = (await this.repository.listCategory(category as string)).sort(() => Math.random() - 0.5);
+    const nameList = (await this.repository.listCategory(query, userCache.pagination?.skip)).sort(() => Math.random() - 0.5);
 
     const formattedNameList = nameList.map((el) => `<b>${el.name}</b> - <code>${el.note}</code>\n\n`).join(' ');
 
-    await this.sendNameLists(chatId, formattedNameList);
+    this.moreAction(chatId, userCache);
+    await this.sendMore(chatId, formattedNameList);
   }
 
   private async btnSearchParams(chatId: number, filter: string): Promise<void> {
-    const userCache: IUserChatCashe | undefined = this.userCache.get(chatId);
+    const userCache: IUserChatCache | undefined = this.getUserChatCache(chatId);
 
-    if (filter === Buttons.apply.text) {
+    if (filter === Buttons.apply.text || filter === Buttons.more.text) {
       Logger.shared.dbg('addFilter', userCache?.selectedFilters);
       return this.applyParams(chatId, userCache?.selectedFilters);
     }
@@ -160,37 +180,37 @@ export class TGBot {
       return this.sendMessage(chatId, 'Выберите параметр из списка меню!');
     }
 
-    const filterIndex = userCache.selectedFilters.indexOf(filter);
-    filterIndex !== -1 ? userCache.selectedFilters.splice(filterIndex, 1) : userCache.selectedFilters.push(filter);
+    const filterIndex = userCache.selectedFilters!.indexOf(filter);
+    filterIndex !== -1 ? userCache.selectedFilters!.splice(filterIndex, 1) : userCache.selectedFilters!.push(filter);
 
-    this.userCache.set(chatId, userCache);
+    this.setUserChatCache(chatId, userCache);
 
-    await this.sendMessage(chatId, `Текущие фильтры: ${userCache.selectedFilters.join(', ')}`);
+    await this.sendMessage(chatId, `Текущие фильтры: ${userCache.selectedFilters!.join(', ')}`);
 
-    if (userCache.selectedFilters.length === Object.keys(Buttons.filters).length) {
+    if (userCache.selectedFilters!.length === Object.keys(Buttons.filters).length) {
       return this.sendMessage(chatId, 'Все фильтры выбраны. Нажмите "Применить".', { reply_markup: { keyboard: ButtonsLayout.apply, resize_keyboard: true } });
     }
   }
 
   private async btnRandomName(chatId: number, action?: string): Promise<void> {
-    const userCache: IUserChatCashe | undefined = this.userCache.get(chatId);
-
-    if (!action || action === Buttons.randomName.requestAnother.text) {
-      return this.getRandomName(chatId, userCache);
-    }
+    const userCache: IUserChatCache | undefined = this.getUserChatCache(chatId);
 
     if (!userCache || userCache.step !== StepStatus.RANDOM_NAME_WAITING) {
       await this.sendMessage(chatId, 'Ошибка! Попробуйте начать заново.');
       return this.sendMenuDelCash(chatId);
     }
 
-    const actionsMap: Record<string, (chatId: number, userCache: IUserChatCashe) => Promise<void>> = {
-      [Buttons.randomName.accept.text]: this.acceptAction.bind(this),
-      [Buttons.randomName.addToFavorites.text]: this.favoritesAction.bind(this),
+    if (!action || action === Buttons.randomName.requestAnother.text) {
+      return this.getRandomName(chatId, userCache);
+    }
+
+    const actionsMap: Record<string, () => Promise<void>> = {
+      [Buttons.randomName.accept.text]: async () => await this.acceptAction(chatId, userCache),
+      [Buttons.randomName.addToFavorites.text]: async () => await this.favoritesAction(chatId, userCache),
     };
 
     if (actionsMap[action]) {
-      return actionsMap[action](chatId, userCache);
+      return actionsMap[action]();
     }
 
     if (!btnRandomNameTextArr.includes(action)) {
@@ -201,18 +221,29 @@ export class TGBot {
   }
 
   private async btnNameMeaning(chatId: number, name: string) {
-    try {
-      const meanService: INameMeaning | undefined = await this.nameMeanerService.getNameMeaning(name);
-      const meanDB = await this.repository.getName(name);
+    const meanService: INameMeaning | undefined = await this.nameMeanerService.getNameMeaning(name);
+    const meanDB = await this.repository.getName(name);
 
-      const response: string = meanService ? `${meanService.name}\n\n${meanService.meaning}` : meanDB ? `Значение имени: \n\n${meanDB.note}` : 'Значений не найдео.';
+    const response: string = meanService ? `${meanService.name}\n\n${meanService.meaning}` : meanDB ? `Значение имени: \n\n${meanDB.note}` : 'Значений не найдео.';
 
-      await this.sendNameMeaning(chatId, response);
-    } catch (e) {
-      const error = e as Error;
-      Logger.shared.fail('TGBot.nameMeaning');
-      Logger.shared.error(error, { params: { name } });
+    await this.sendNameMeaning(chatId, response);
+  }
+
+  private moreAction(chatId: number, userCache: IUserChatCache) {
+    Logger.shared.dbg('moreAction', userCache);
+    if (userCache === undefined) {
+      return this.sendMenuDelCash(chatId, 'Ошибка! Попробуйте начать заново.');
     }
+
+    if (!userCache?.pagination) {
+      userCache.pagination = { skip: 2 };
+      this.setUserChatCache(chatId, userCache);
+      return;
+    }
+
+    const skipUp = userCache.pagination.skip + 1;
+    userCache.pagination.skip = skipUp;
+    this.setUserChatCache(chatId, userCache);
   }
 
   //...................................................................
@@ -249,6 +280,12 @@ export class TGBot {
     });
   }
 
+  private async sendMore(chatId: number, text: string) {
+    await this.sendMessage(chatId, text || '___', {
+      reply_markup: { keyboard: ButtonsLayout.more, resize_keyboard: true },
+    });
+  }
+
   //...................................................................
 
   private async handleMenuSelection(chatId: number, text: string): Promise<void> {
@@ -258,32 +295,32 @@ export class TGBot {
     const menuActions: Record<string, () => Promise<void>> = {
       // Поиск по фильтрам
       [Buttons.mainMenu.searchByFilters.text]: async () => {
-        this.userCache.set(chatId, { step: StepStatus.FILTER_WAITING, selectedFilters: [] });
+        this.setUserChatCache(chatId, { step: StepStatus.FILTER_WAITING, selectedFilters: [] });
         await this.sendSearchByFilters(chatId);
       },
 
       // Списки имен
       [Buttons.mainMenu.nameLists.text]: async () => {
-        this.userCache.set(chatId, { step: StepStatus.NAME_LISTS_WAITING, selectedFilters: [] });
+        this.setUserChatCache(chatId, { step: StepStatus.NAME_LISTS_WAITING, selectedFilters: [] });
         await this.sendNameLists(chatId);
       },
 
       // Значение имени
       [Buttons.mainMenu.nameMeaning.text]: async () => {
-        this.userCache.set(chatId, { step: StepStatus.NAME_MEANING_WAITING, selectedFilters: [] });
+        this.setUserChatCache(chatId, { step: StepStatus.NAME_MEANING_WAITING, selectedFilters: [] });
         await this.sendNameMeaning(chatId);
       },
 
       // Случайное имя
       [Buttons.mainMenu.randomName.text]: async () => {
-        this.userCache.set(chatId, { step: StepStatus.RANDOM_NAME_WAITING, selectedFilters: [] });
+        this.setUserChatCache(chatId, { step: StepStatus.RANDOM_NAME_WAITING, selectedFilters: [] });
         await this.sendRandomName(chatId);
         this.btnRandomName(chatId);
       },
 
       // Избранное
       [Buttons.mainMenu.favorites.text]: async () => {
-        this.userCache.set(chatId, { step: StepStatus.FAVORITE_NAME_WAITING, selectedFilters: [] });
+        this.setUserChatCache(chatId, { step: StepStatus.FAVORITE_NAME_WAITING, selectedFilters: [] });
         const favorites: string = await this.repository.listFavorites(chatId).then((r) => r.map((n) => `<code>${n.name}</code>`).join(', ') || '<i>Ваш список избранных имен пуст.</i>');
         const message = `<b>Введите имя и выберите ✅  |  ❌</b>\n ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌\n<b>ИЗБРАННЫЕ:</b> ${favorites}`;
         await this.sendFavoriteName(chatId, message);
@@ -307,7 +344,7 @@ export class TGBot {
   }
 
   private async handleAddOrDelete(chatId: number, action: string) {
-    const userCashe: IUserChatCashe | undefined = this.userCache.get(chatId);
+    const userCashe: IUserChatCache | undefined = this.getUserChatCache(chatId);
     const favorite = userCashe?.currentFavoriteName?.name;
 
     if (!Buttons.favoriteName[action] || !favorite) {
@@ -317,7 +354,6 @@ export class TGBot {
 
     if (action === 'add') {
       await this.saveFavoriteName(chatId, favorite);
-      await this.sendMessage(chatId, ``);
       const favorites: string = await this.repository.listFavorites(chatId).then((r) => r.map((n) => `<code>${n.name}</code>`).join(', ') || '<i>Ваш список избранных имен пуст.</i>');
       await this.sendMessage(chatId, `<b> ✅ Имя добавлено в Избранные!</b>\n ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌\n<b>ИЗБРАННЫЕ:</b> ${favorites}`, {
         reply_markup: { keyboard: ButtonsLayout.favoriteName, resize_keyboard: true },
@@ -332,40 +368,37 @@ export class TGBot {
     });
   }
 
-  private async getRandomName(chatId: number, userCache: IUserChatCashe | undefined): Promise<void> {
+  private async getRandomName(chatId: number, userCache: IUserChatCache): Promise<void> {
     const result = await this.repository.randomName();
-    this.userCache.set(chatId, { ...userCache, currentFavoriteName: { name: result.name, id: result.id } });
+    userCache.currentFavoriteName = { name: result.name };
+    this.setUserChatCache(chatId, userCache);
     return this.sendMessage(chatId, `<b>${result.name}</b> - <code>${result.note}</code>\n\n\nВыберите действие:`);
   }
 
   private async applyParams(chatId: number, filters?: string[]): Promise<void> {
-    if (!filters || filters.length === 0) {
-      return this.sendMessage(chatId, `Вы не выбрали параметры запроса.`);
+    const userCache = this.getUserChatCache(chatId);
+    let query = userCache?.query;
+
+    if ((!query && !filters) || !userCache) {
+      return this.sendMenuDelCash(chatId, `Что-то пошло не так...`);
     }
 
-    await this.sendMessage(chatId, `Вы выбрали параметры: ${filters.join(', ')}.`);
+    if (!query && filters) {
+      query = queryCondition(btnKeysByVal(Buttons.filters, filters));
+      userCache.query = query;
+    }
 
-    Logger.shared.info('getListByFilter', filters);
-
-    // Формирование параметров запроса
-    const keys = btnKeysByVal(Buttons.filters, filters);
-    const query = queryCondition(keys);
-
-    const nameList = (await this.repository.listFilter(query)).sort(() => Math.random() - 0.5);
+    const nameList = (await this.repository.listFilter(query!, userCache?.pagination?.skip)).sort(() => Math.random() - 0.5);
 
     const formattedNameList = nameList.map((el) => `<code>${el.name}</code> - <i>${el.note}</i>\n\n`).join(' ');
 
-    await this.sendMessage(chatId, formattedNameList);
-
-    this.userCache.set(chatId, { step: StepStatus.FILTER_WAITING, selectedFilters: [] });
-
-    return this.sendSearchByFilters(chatId);
+    this.moreAction(chatId, userCache);
+    await this.sendMore(chatId, formattedNameList);
   }
 
-  private async acceptAction(chatId: number, userCache: IUserChatCashe): Promise<void> {
-    if (!userCache.currentFavoriteName?.id) {
-      await this.sendMessage(chatId, 'Ошибка! Попробуйте начать заново.');
-      return this.sendMenuDelCash(chatId);
+  private async acceptAction(chatId: number, userCache: IUserChatCache): Promise<void> {
+    if (!userCache.currentFavoriteName?.name) {
+      return this.sendMenuDelCash(chatId, 'Ошибка! Попробуйте начать заново.');
     }
 
     await this.saveFavoriteName(chatId, userCache.currentFavoriteName.name);
@@ -373,8 +406,8 @@ export class TGBot {
     return this.sendMenuDelCash(chatId);
   }
 
-  private async favoritesAction(chatId: number, userCache: IUserChatCashe): Promise<void> {
-    if (!userCache.currentFavoriteName?.id) {
+  private async favoritesAction(chatId: number, userCache: IUserChatCache): Promise<void> {
+    if (!userCache.currentFavoriteName?.name) {
       return this.sendMessage(chatId, 'Ошибка! Попробуйте начать заново.');
     }
     await this.saveFavoriteName(chatId, userCache.currentFavoriteName.name);
@@ -408,10 +441,10 @@ export class TGBot {
     }
   }
 
-  private async sendMenuDelCash(chatId: number): Promise<void> {
+  private async sendMenuDelCash(chatId: number, text?: string): Promise<void> {
     this.userCache.del(chatId);
 
-    await this.sendMessage(chatId, 'Главное меню', {
+    await this.sendMessage(chatId, text || 'Главное меню', {
       reply_markup: { keyboard: ButtonsLayout.mainMenu, resize_keyboard: true },
     });
   }
