@@ -1,11 +1,7 @@
-import { $Enums, Origin, Prisma, PrismaClient } from '@prisma/client';
+import { $Enums, Prisma, PrismaClient } from '@prisma/client';
 import PrismaSingleton from './prsmSinglton';
 import { Logger } from '../logger';
-
-function randomSkip(totalItems: number, limit: number): number {
-  const maxSkip = Math.max(0, totalItems - limit); // Максимальное значение для skip
-  return Math.floor(Math.random() * (maxSkip + 1)); // Случайное значение от 0 до maxSkip
-}
+import { offsetPagination, randomNumber } from '../../utils';
 
 export class QueryRepository {
   private prisma: PrismaClient;
@@ -14,29 +10,27 @@ export class QueryRepository {
     this.prisma = PrismaSingleton.shared();
   }
 
-  async listFilter(where: Prisma.NameWhereInput) {
-    Logger.shared.info('where:', where);
-    //todo реализовать функционад пагинации для телеги
-    const totalcount = await this.prisma.name.count({ where });
-    const take = 30;
-    const skip = randomSkip(totalcount, take);
+  async listFilter(where: Prisma.NameWhereInput, pageNumber = 1) {
+    Logger.shared.info('query:', { where, pageNumber });
 
-    return this.prisma.name.findMany({ take, skip, where });
+    const pageSize = 10;
+    const offset = offsetPagination(pageNumber, pageSize);
+
+    return this.prisma.name.findMany({ take: pageSize, skip: offset, where, orderBy: { createdAt: 'desc' } });
   }
 
-  async listCategory(category: string) {
-    Logger.shared.info('category:', category);
-    //todo реализовать функционад пагинации для телеги
-    const totalcount = await this.prisma.name.count({ where: { category } });
-    const take = 30;
-    const skip = randomSkip(totalcount, take);
+  async listCategory(where: Prisma.NameWhereInput, pageNumber = 1) {
+    Logger.shared.dbg('query:', { where, pageNumber });
 
-    return this.prisma.name.findMany({ take, skip, where: { category } });
+    const pageSize = 10;
+    const offset = offsetPagination(pageNumber, pageSize);
+
+    return this.prisma.name.findMany({ take: pageSize, skip: offset, where, orderBy: { createdAt: 'desc' } });
   }
 
   async randomName() {
     const totalcount = await this.prisma.name.count();
-    return this.prisma.name.findFirstOrThrow({ skip: randomSkip(totalcount, 1) });
+    return this.prisma.name.findFirstOrThrow({ skip: randomNumber(totalcount, 1) });
   }
 
   async listFavorites(chatId: number) {
