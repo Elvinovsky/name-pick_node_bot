@@ -1,4 +1,5 @@
-import { defaultConfig, TGBot } from './core';
+import { TGBot } from './bot';
+import { defaultConfig } from './core';
 
 async function main() {
   const bot = new TGBot(defaultConfig);

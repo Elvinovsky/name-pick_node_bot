@@ -1,14 +1,13 @@
 import TelegramBot from 'node-telegram-bot-api';
 import NodeCache from 'node-cache';
 
-import { Config } from '../';
-import { Logger } from '../';
-import { btnCategoriesTextArr, btnFiltersTextArr, btnKeysByVal, btnRandomNameTextArr, queryCondition } from '../../utils';
+import { Config } from '../../core';
+import { Logger } from '../../core';
+import { btnCategoriesTextArr, btnFiltersTextArr, btnKeysByVal, btnRandomNameTextArr, queryCondition } from '../utils';
 import { Buttons, ButtonsLayout } from './btnMenu';
-import { QueryRepository } from '../Repository/query.repository';
-import { CommandRepository } from '../Repository/command.repository';
-import { StepStatus } from '../../constants';
-import { INameMeaning, NameMeaner } from '../Services';
+import { QueryRepository, CommandRepository } from '../../core/repositories';
+import { StepStatus } from '../constants';
+import { INameMeaning, NameMeaner } from '../../core/Services';
 
 interface IUserChatCashe {
   step: string;

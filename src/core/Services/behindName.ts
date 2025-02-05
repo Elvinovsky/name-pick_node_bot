@@ -1,7 +1,7 @@
-import { TranslatorService } from './';
+import { TranslatorService } from '.';
 import puppeteer from 'puppeteer';
 
-import { Logger } from '../Logger';
+import { Logger } from '../logger';
 import { ruToEnLayout } from '../../utils';
 
 export interface INameMeaning {

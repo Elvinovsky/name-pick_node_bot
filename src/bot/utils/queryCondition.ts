@@ -1,8 +1,6 @@
 import { $Enums, Prisma } from '@prisma/client';
-import { Logger } from '../core';
 
 export function queryCondition(filters?: string[] | string): Prisma.NameWhereInput {
-  Logger.shared.dbg('queryCondition', filters);
   if (!filters?.length) return {};
   Array.isArray(filters) ? filters : (filters = [filters]);
 

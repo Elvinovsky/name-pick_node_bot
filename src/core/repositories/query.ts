@@ -1,6 +1,6 @@
 import { $Enums, Origin, Prisma, PrismaClient } from '@prisma/client';
-import PrismaSingleton from './prisma';
-import { Logger } from '../Logger';
+import PrismaSingleton from './prsmSinglton';
+import { Logger } from '../logger';
 
 function randomSkip(totalItems: number, limit: number): number {
   const maxSkip = Math.max(0, totalItems - limit); // Максимальное значение для skip

@@ -1,2 +1,2 @@
-export * from './namemeaner';
+export * from './behindName';
 export * from './translator';

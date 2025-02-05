@@ -1,5 +1,5 @@
 import translate from 'google-translate-api-x';
-import { Logger } from '../Logger';
+import { Logger } from '../logger';
 
 export class TranslatorService {
   private destLang: string;

@@ -1,4 +1,4 @@
-import { ButtonsLayout } from '../core/TGBot/btnMenu';
+import { ButtonsLayout } from '../main/btnMenu';
 
 // Button Helpers
 //...............................................................................

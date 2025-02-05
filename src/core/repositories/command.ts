@@ -1,6 +1,6 @@
 import { $Enums, Prisma, PrismaClient } from '@prisma/client';
-import PrismaSingleton from './prisma';
-import { Logger } from '../Logger';
+import PrismaSingleton from './prsmSinglton';
+import { Logger } from '../logger';
 
 export class CommandRepository {
   private prisma: PrismaClient;

@@ -1,3 +1,3 @@
-export * from './Config';
-export * from './Logger';
-export * from './TGBot';
+export * from './config';
+export * from './logger';
+export * from '../bot/main';
