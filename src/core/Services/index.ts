@@ -1,2 +1,2 @@
-export * from './behindName';
+export * from './NMScraper';
 export * from './translator';
