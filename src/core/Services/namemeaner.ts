@@ -7,8 +7,6 @@ import { ruToEnLayout } from '../../utils';
 export interface INameMeaning {
   name: string;
   meaning: string;
-  author?: string;
-  datePublished?: string;
 }
 
 export class NameMeaner {
@@ -30,12 +28,12 @@ export class NameMeaner {
       const nameInfo = await page.evaluate(() => {
         const getText = (selector: string) => {
           const element = document.querySelector(selector);
-          return element ? element.textContent?.trim() || 'Нет данных' : 'Нет данных';
+          return element ? element.textContent?.trim() || '' : '';
         };
 
         const getTextFromAll = (selector: string, index: number) => {
           const elements = document.querySelectorAll(selector);
-          return elements[index] ? elements[index].textContent?.trim() || 'Нет данных' : 'Нет данных';
+          return elements[index] ? elements[index].textContent?.trim() || '' : '';
         };
 
         return {
@@ -45,7 +43,7 @@ export class NameMeaner {
       });
 
       await browser.close();
-      return nameInfo;
+      return nameInfo.meaning ? nameInfo : undefined;
     } catch (error) {
       const e = error as Error;
       Logger.shared.error(e, { note: 'Ошибка при получении значения имени:' });
