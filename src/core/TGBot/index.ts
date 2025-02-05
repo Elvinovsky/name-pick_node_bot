@@ -108,7 +108,7 @@ export class TGBot {
     if (!key) {
       userCache.currentFavoriteName = { name: text };
       this.userCache.set(chatId, userCache);
-      return this.sendMessage(chatId, '<b>Теперь выберите действие.</b>');
+      return this.sendFavoriteName(chatId, '<b>Теперь выберите действие.</b>');
     }
 
     if (!userCache?.currentFavoriteName?.name) {
@@ -141,7 +141,7 @@ export class TGBot {
 
     const formattedNameList = nameList.map((el) => `<b>${el.name}</b> - <code>${el.note}</code>\n\n`).join(' ');
 
-    await this.sendMessage(chatId, formattedNameList);
+    await this.sendNameLists(chatId, formattedNameList);
   }
 
   private async btnSearchParams(chatId: number, filter: string): Promise<void> {
@@ -203,10 +203,12 @@ export class TGBot {
 
   private async btnNameMeaning(chatId: number, name: string) {
     try {
-      const mean: INameMeaning | undefined = await await this.nameMeanerService.getNameMeaning(name);
+      const meanService: INameMeaning | undefined = await this.nameMeanerService.getNameMeaning(name);
+      const meanDB = await this.repository.getName(name);
 
-      const response: string = mean ? `${mean.name}\n\n${mean.meaning}` : 'Ошибка получения данных. Попробуйте позже.';
-      await this.sendMessage(chatId, response);
+      const response: string = meanService ? `${meanService.name}\n\n${meanService.meaning}` : meanDB ? `Значение имени: \n\n${meanDB.note}` : 'Значений не найдео.';
+
+      await this.sendNameMeaning(chatId, response);
     } catch (e) {
       const error = e as Error;
       Logger.shared.fail('TGBot.nameMeaning');
@@ -224,14 +226,14 @@ export class TGBot {
     });
   }
 
-  private async sendNameLists(chatId: number) {
-    await this.sendMessage(chatId, 'Выберите категорию:', {
+  private async sendNameLists(chatId: number, message?: string) {
+    await this.sendMessage(chatId, message || 'Выберите категорию:', {
       reply_markup: { keyboard: ButtonsLayout.nameLists, resize_keyboard: true },
     });
   }
 
-  private async sendNameMeaning(chatId: number) {
-    await this.sendMessage(chatId, 'Введите имя, и я расскажу о его значении.', {
+  private async sendNameMeaning(chatId: number, text?: string) {
+    await this.sendMessage(chatId, text || 'Введите имя, и я расскажу о его значении.', {
       reply_markup: { keyboard: ButtonsLayout.back, resize_keyboard: true },
     });
   }
@@ -243,7 +245,7 @@ export class TGBot {
   }
 
   private async sendFavoriteName(chatId: number, message: string) {
-    await this.sendMessage(chatId, `<b>Введите имя и выберите ✅  |  ❌</b>\n ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌\n<b>ИЗБРАННЫЕ:</b> ${message}`, {
+    await this.sendMessage(chatId, message, {
       reply_markup: { keyboard: ButtonsLayout.favoriteName, resize_keyboard: true },
     });
   }
@@ -284,7 +286,8 @@ export class TGBot {
       [Buttons.mainMenu.favorites.text]: async () => {
         this.userCache.set(chatId, { step: StepStatus.FAVORITE_NAME_WAITING, selectedFilters: [] });
         const favorites: string = await this.repository.listFavorites(chatId).then((r) => r.map((n) => `<code>${n.name}</code>`).join(', ') || '<i>Ваш список избранных имен пуст.</i>');
-        await this.sendFavoriteName(chatId, favorites);
+        const message = `<b>Введите имя и выберите ✅  |  ❌</b>\n ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌\n<b>ИЗБРАННЫЕ:</b> ${favorites}`;
+        await this.sendFavoriteName(chatId, message);
       },
 
       // Настройки
