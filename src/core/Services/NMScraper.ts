@@ -9,7 +9,7 @@ export interface INameMeaning {
   meaning: string;
 }
 
-export class NameMeaner {
+export class NameMeaningScraper {
   private static BASE_URL = 'https://kakzovut.ru/names/';
 
   constructor() {}
@@ -21,7 +21,7 @@ export class NameMeaner {
       const browser = await puppeteer.launch({ headless: true });
       const page = await browser.newPage();
 
-      const url = `${NameMeaner.BASE_URL}${nameEn.toLowerCase()}.html`;
+      const url = `${NameMeaningScraper.BASE_URL}${nameEn.toLowerCase()}.html`;
       console.log(`Открываем страницу: ${url}`);
       await page.goto(url, { waitUntil: 'domcontentloaded' });
 
