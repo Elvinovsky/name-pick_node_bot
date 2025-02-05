@@ -1,12 +1,12 @@
 import { PoolConfig } from 'pg';
-import 'process';
-type PgSqlConfig = PoolConfig;
+import dotenv from 'dotenv';
 
+dotenv.config();
 export interface Config {
   stage?: string;
 
   datasource?: {
-    db?: PgSqlConfig;
+    db?: PoolConfig;
   };
 
   services?: {
@@ -15,7 +15,7 @@ export interface Config {
       chat_id: number;
     };
 
-    seedpeekAI?: {
+    behindthename?: {
       authKey: string;
     };
   };
@@ -40,8 +40,8 @@ export const defaultConfig: Config = {
       authKey: process.env.SERVICE_TELEGRAM_API_KEY || '7871110241:AAHJ2G5iPwFVC-Ly0EZ347dIJSTIUv1r8MY',
       chat_id: 0,
     },
-    seedpeekAI: {
-      authKey: process.env.SERVICE_SEEDPEEK_API_KEY || '',
+    behindthename: {
+      authKey: process.env.BEHINDTHENAME_API_KEY || ''
     },
   },
 };
