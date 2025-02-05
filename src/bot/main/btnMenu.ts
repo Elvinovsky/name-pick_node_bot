@@ -32,7 +32,7 @@ export const Buttons: IButtons = {
     addToFavorites: { text: '❤️ Добавить в избранное' },
   },
   nameLists: {
-    topPopulare: { text: '💎 Топ популярных имен' },
+    topPopulare: { text: "💎 Топ популярных имен" },
     rareUnusual: { text: '🕊 Редкие и необычные' },
     classicOld: { text: '📜 Классические и старинные' },
   },
@@ -42,8 +42,9 @@ export const Buttons: IButtons = {
     theme: { text: '🎨 Тема' },
     language: { text: '🌍 Язык интерфейса' },
   },
-  back: { text: '⬅️ Назад' },
+  back: { text: '⬅️ В главное меню' },
   apply: { text: '✅ Применить' },
+  more: { text: '🔄 Загрузить ещё' },
 } as const;
 
 export const ButtonsLayout: ButtonsLayoutType = {
@@ -70,6 +71,8 @@ export const ButtonsLayout: ButtonsLayoutType = {
 
   settings: [[Buttons.settings.exportFavorites, Buttons.settings.notifications], [Buttons.settings.theme, Buttons.settings.language], [Buttons.back]],
 
+  more: [[Buttons.more], [Buttons.back]],
+
   back: [[Buttons.back]],
 
   apply: [[Buttons.apply]],
@@ -87,6 +90,7 @@ interface IButtons {
   settings: ISettingsButtons;
   back: IButton;
   apply: IButton;
+  more: IButton;
 }
 
 type ButtonsLayoutType = {
