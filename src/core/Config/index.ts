@@ -37,7 +37,7 @@ export const defaultConfig: Config = {
 
   services: {
     telegram: {
-      authKey: process.env.SERVICE_TELEGRAM_API_KEY || '7871110241:AAHJ2G5iPwFVC-Ly0EZ347dIJSTIUv1r8MY',
+      authKey: process.env.SERVICE_TELEGRAM_API_KEY || '',
       chat_id: 0,
     },
     behindthename: {
