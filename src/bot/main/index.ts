@@ -1,15 +1,12 @@
 import TelegramBot from 'node-telegram-bot-api';
 import NodeCache from 'node-cache';
+import { Prisma } from '@prisma/client';
 
-import { btnCategoriesTextArr, btnFiltersTextArr, btnKeysByVal, btnRandomNameTextArr, queryCondition } from '../utils';
 import { Buttons, ButtonsLayout } from './btnMenu';
 import { StepStatus } from '../constants';
-
-import { QueryRepository, CommandRepository } from '../../core/';
-import { INameMeaning, NameMeaningScraper } from '../../core/';
-import { Config } from '../../core';
-import { Logger } from '../../core';
-import { Prisma } from '@prisma/client';
+import { QueryRepository, CommandRepository, INameMeaning, NameMeaningScraper, Config, Logger } from '../../core/';
+import { btnCategoriesTextArr, btnFiltersTextArr, btnKeysByVal, btnRandomNameTextArr, queryCondition } from '../utils';
+import { isName } from '../../utils';
 
 interface IUserChatCache {
   step: string;
@@ -115,7 +112,7 @@ export class TGBot {
       return this.sendMenuDelCash(chatId);
     }
 
-    if (text.trim().length < 2 || text.trim().length > 16) {
+    if (isName(text, 3, 15).error) {
       return this.sendMessage(chatId, '<b>Не валидное имя!</b> \n <i>( не меньше 3 букв и не больше 15 )</i>');
     }
 
@@ -223,7 +220,7 @@ export class TGBot {
   }
 
   private async btnNameMeaning(chatId: number, name: string) {
-    if (name.trim().length < 2 || name.trim().length > 16) {
+    if (isName(name, 3, 15).error) {
       return this.sendMessage(chatId, '<b>Не валидное имя!</b> \n <i>( не меньше 3 букв и не больше 15 )</i>');
     }
 
