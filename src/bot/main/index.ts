@@ -50,7 +50,7 @@ export class TGBot {
     }
   }
 
-  setupMenu(): void {
+  async setupMenu(): Promise<void> {
     if (!this.bot) {
       Logger.shared.fail("Bot don't initialize!");
       return;
@@ -64,7 +64,9 @@ export class TGBot {
     this.bot.on('message', async (msg) => {
       const chatId = msg.chat.id;
       const text = msg.text!;
-      const userCache: IUserChatCache | undefined = this.userCache.get(chatId);
+      await this.bot!.sendChatAction(chatId, 'typing');
+
+      const userCache: IUserChatCache | undefined = this.getUserChatCache(chatId);
 
       if (text === Buttons.back.text) {
         return this.sendMenuDelCash(chatId);
@@ -221,6 +223,10 @@ export class TGBot {
   }
 
   private async btnNameMeaning(chatId: number, name: string) {
+    if (name.trim().length < 2 || name.trim().length > 16) {
+      return this.sendMessage(chatId, '<b>Не валидное имя!</b> \n <i>( не меньше 3 букв и не больше 15 )</i>');
+    }
+
     const meanService: INameMeaning | undefined = await this.nameMeanerService.getNameMeaning(name);
     const meanDB = await this.repository.getName(name);
 
@@ -449,15 +455,15 @@ export class TGBot {
     });
   }
 
-  async stopBot(): Promise<void> {
+  stopBot(): void | never {
     if (this.bot) {
       try {
-        await this.bot.stopPolling();
-        Logger.shared.info('Telegram bot stopped successfully');
+        this.bot.stopPolling();
+        Logger.shared.info('Telegram bot stop Polling!');
       } catch (error) {
         const e = error as Error;
         Logger.shared.error(e);
-        throw new Error(e.message);
+        throw error;
       }
     }
   }
